@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>일일 QC 일지 — 치과용 3D 프린팅 세라믹 레진 (v0.3 · 오프라인)</title>
+<style>
+  :root{
+    --bd:#d8dde3; --bd2:#eef1f4; --ink:#1c2530; --sub:#5b6673;
+    --acc:#0b6b8f; --acc-w:#f3fafd; --warn:#b45309; --bad:#b91c1c; --ok:#15803d;
+    --calc:#f7f9fb; --pa:#0b6b8f; --pb:#8f4a0b; --pa-w:#f2f9fc; --pb-w:#fdf6ef;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 20px 90px;font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+       color:var(--ink);background:#f4f6f8;font-size:13px;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:19px;margin:0 0 4px}
+  .subtitle{color:var(--sub);font-size:12px;margin:0 0 14px}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:14px 18px;margin-bottom:14px}
+  .card.off{background:#fafbfc;opacity:.62}
+  .chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .chead h2{font-size:14px;margin:0;color:var(--acc);letter-spacing:.2px}
+  .chead .req{font-size:11px;color:var(--sub);background:var(--bd2);border-radius:10px;padding:1px 8px}
+  .sw{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--sub);font-weight:700;cursor:pointer}
+  .sw input{width:auto;margin:0;transform:scale(1.15)}
+  .hint{font-size:11.5px;color:var(--sub);margin:4px 0 12px}
+  .skipmsg{font-size:11.5px;color:var(--warn);margin:6px 0 0;display:none}
+  .card.off .skipmsg{display:block}
+  .card.off .cbody{display:none}
+  .pblock{border:1px solid var(--bd);border-left:4px solid var(--pa);border-radius:6px;padding:12px 14px;margin-bottom:12px;background:var(--pa-w)}
+  .pblock.b{border-left-color:var(--pb);background:var(--pb-w)}
+  .pblock > h3{margin:0 0 8px;font-size:13px;color:var(--pa)}
+  .pblock.b > h3{color:var(--pb)}
+  .grid{display:grid;gap:10px 14px}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  label{display:block;font-size:11.5px;color:var(--sub);margin-bottom:3px;font-weight:600}
+  input,select,textarea{width:100%;padding:6px 8px;border:1px solid var(--bd);border-radius:5px;font:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid #bfe3f0;border-color:var(--acc)}
+  input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+  textarea{min-height:60px;resize:vertical}
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;background:#fff}
+  th,td{border:1px solid var(--bd);padding:4px 6px;text-align:center}
+  th{background:var(--bd2);font-size:11.5px;font-weight:700;color:var(--sub)}
+  td.rowhead,th.rowhead{background:var(--bd2);font-weight:700;font-size:11.5px;color:var(--sub)}
+  td input{border:none;text-align:right;padding:4px 2px;background:transparent}
+  td input:focus{outline:2px solid #bfe3f0;border-radius:3px}
+  td.calc{background:var(--calc);font-weight:600;font-size:12px}
+  .stat{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .pill{background:#fff;border:1px solid #cfe6ef;border-radius:20px;padding:4px 12px;font-size:12px}
+  .pill b{font-variant-numeric:tabular-nums}
+  .cmp{margin-top:6px;padding:12px 14px;border:1px dashed var(--bd);border-radius:6px;background:#fbfcfd}
+  .cmp h3{margin:0 0 8px;font-size:12.5px;color:var(--sub)}
+  .spec{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px;margin-top:12px;
+        padding-top:12px;border-top:1px dashed var(--bd)}
+  .spec-title{grid-column:1/-1;font-size:11.5px;color:var(--sub);font-weight:700;margin:0}
+  .verdict{font-weight:700;padding:2px 10px;border-radius:5px;display:inline-block}
+  .v-pass{background:#e8f6ec;color:var(--ok)} .v-fail{background:#fdeaea;color:var(--bad)}
+  .v-none{background:#f1f3f5;color:var(--sub)} .v-watch{background:#fdf3e3;color:var(--warn)}
+  .btnbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  button{font:inherit;padding:7px 13px;border-radius:6px;border:1px solid var(--bd);background:#fff;cursor:pointer;font-weight:600}
+  button:hover{background:#f0f4f7}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+  button.primary:hover{filter:brightness(1.08)}
+  button.mini{padding:3px 9px;font-size:11.5px;font-weight:500}
+  .scope{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--bd);
+         border-radius:8px;padding:10px 14px;margin-bottom:14px}
+  .scope b{font-size:12px}
+  .scope .now{margin-left:auto;font-size:12px;color:var(--acc);font-weight:700}
+  .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:12px}
+  .ph{border:1px solid var(--bd);border-radius:6px;overflow:hidden;background:#fafbfc}
+  .ph img{width:100%;height:140px;object-fit:cover;display:block;background:#e9edf1}
+  .ph .meta{padding:6px}
+  .ph .meta input,.ph .meta select{font-size:11.5px;margin-bottom:4px}
+  .ph .meta button{width:100%;padding:3px;font-size:11px;font-weight:500}
+  .drop{border:2px dashed var(--bd);border-radius:8px;padding:18px;text-align:center;color:var(--sub);background:#fafbfc}
+  .drop.on{border-color:var(--acc);background:var(--acc-w)}
+  .note{font-size:11.5px;color:var(--sub);background:#fafbfc;border-left:3px solid var(--bd);padding:8px 10px;margin-top:10px}
+  .ask{font-size:11.5px;color:var(--warn);background:#fffbf3;border-left:3px solid #e5b567;padding:8px 10px;margin-top:10px}
+  .flag{color:var(--warn);font-weight:700}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1c2530;color:#fff;
+         padding:10px 18px;border-radius:22px;font-size:12.5px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+  #toast.on{opacity:1}
+  .sticky{position:sticky;bottom:0;background:rgba(244,246,248,.95);backdrop-filter:blur(4px);
+          border-top:1px solid var(--bd);padding:10px 0;margin-top:8px;z-index:20}
+  @media print{
+    body{background:#fff;padding:0;font-size:11px}
+    .card{border-color:#999;break-inside:avoid;margin-bottom:8px}
+    .card.off{display:none}
+    .btnbar,.sticky,.drop,.scope,.sw,#toast{display:none!important}
+    .ph img{height:110px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>일일 QC 일지 — 치과용 3D 프린팅 세라믹 레진</h1>
+  <p class="subtitle">
+    <b>v0.3 · 완전 오프라인</b> — 서버·계정 없이 브라우저에서만 동작합니다.
+    입력을 마치면 <b>[HTML로 저장]</b> 을 누르세요. 입력값·사진이 들어있는 단일 HTML 파일이 내려받아지고,
+    그 파일을 다시 열면 내용이 그대로 복원됩니다.
+  </p>
+
+  <div class="scope">
+    <b>진행 범위</b>
+    <button class="mini" onclick="setScope(4)">1–4 (환경·광량·Cure)</button>
+    <button class="mini" onclick="setScope(5)">1–5 (＋정밀도)</button>
+    <button class="mini" onclick="setScope(6)">전체 (＋사진)</button>
+    <span class="now" id="scopeNow">실시: 환경 · 광량 · CureDepth</span>
+  </div>
+
+  <!-- ── 1. 기본 정보 (필수) ───────────────────────── -->
+  <section class="card" id="sec1">
+    <div class="chead"><h2>1. 기본 정보</h2><span class="req">필수</span></div>
+    <p class="hint">일지 1건 = 1일 · 프린터 A + B 를 함께 기록합니다.</p>
+    <div class="cbody">
+      <div class="grid g4">
+        <div><label>측정 날짜</label><input type="date" id="m_date" value="2026-07-30"></div>
+        <div><label>일지 번호</label><input id="m_docno" placeholder="QC-2026-0001" value="QC-2026-0730"></div>
+        <div><label>작성자</label><input id="m_author" placeholder="이름" value="이윤희"></div>
+        <div><label>검토자</label><input id="m_review" placeholder="이름" value="이윤희"></div>
+        <div><label>레진 조성 코드</label><input id="m_formula" placeholder="F-001" value="ver11"></div>
+        <div><label>레진 Lot No.</label><input id="m_lot" placeholder="LOT-xxxx" value="Lot-260722"></div>
+        <div><label>슬라이서 프로파일 (공통)</label><input id="m_slicer" placeholder="layer 50 µm / exp 2.4 s" value="layer 50µm"></div>
+        <div><label>공통 비고</label><input id="m_note" placeholder="예: 동일 Lot 으로 A·B 동시 평가" value="동일 lot으로 프린터 A/B 비교 평가"></div>
+      </div>
+      <div id="printerMeta">
+    <div class="pblock" style="margin-top:12px">
+      <h3>프린터 A</h3>
+      <div class="grid g4">
+        <div><label>모델 / S/N</label><input id="m_A_printer" placeholder="예: LCD 4K / SN-xxxx" value="QC 후 공급된 프린터 A"></div>
+        <div><label>파장 (nm)</label><input id="m_A_wl" value="405"></div>
+        <div><label>FEP·필름 사용시간 (h)</label><input type="number" step="any" id="m_A_fep" value=".0"></div>
+        <div><label>누적 출력시간 (h)</label><input type="number" step="any" id="m_A_hours" value="0"></div>
+        <div><label>레진 잔량 / 교체</label><input id="m_A_resin" placeholder="예: 320 g / 신규 투입" value="신규투입"></div>
+        <div><label>레진 Lot (공통과 다를 때만)</label><input id="m_A_lot" placeholder="비우면 공통 Lot" value=""></div>
+        <div style="grid-column:span 2"><label>비고</label><input id="m_A_note" placeholder="예: 광원 교체 3일 경과" value=""></div>
+      </div>
+    </div>
+    <div class="pblock b" style="margin-top:12px">
+      <h3>프린터 B</h3>
+      <div class="grid g4">
+        <div><label>모델 / S/N</label><input id="m_B_printer" placeholder="예: LCD 4K / SN-xxxx" value="QC 후 공급된 프린터 B"></div>
+        <div><label>파장 (nm)</label><input id="m_B_wl" value="405"></div>
+        <div><label>FEP·필름 사용시간 (h)</label><input type="number" step="any" id="m_B_fep" value="0"></div>
+        <div><label>누적 출력시간 (h)</label><input type="number" step="any" id="m_B_hours" value="0"></div>
+        <div><label>레진 잔량 / 교체</label><input id="m_B_resin" placeholder="예: 320 g / 신규 투입" value="신규투입"></div>
+        <div><label>레진 Lot (공통과 다를 때만)</label><input id="m_B_lot" placeholder="비우면 공통 Lot" value=""></div>
+        <div style="grid-column:span 2"><label>비고</label><input id="m_B_note" placeholder="예: 광원 교체 3일 경과" value="신규 설치"></div>
+      </div>
+    </div></div>
+    </div>
+  </section>
+
+  <!-- ── 2. 환경 ───────────────────────── -->
+  <section class="card" id="sec2">
+    <div class="chead"><h2>2. 작업 환경 (온도 · 습도)</h2><span class="req">공통</span>
+      <label class="sw"><input type="checkbox" id="do_env" checked=""> 실시</label></div>
+    <p class="hint">A·B 가 같은 공간이라는 가정의 공통 기록입니다. 별도 공간이면 알려주세요(분리 가능).</p>
+    <p class="skipmsg">▸ 미실시 — 저장 파일에 "미실시"로 기록되고 판정에서 제외됩니다.</p>
+    <div class="cbody">
+      <div class="grid g3" style="margin-bottom:10px">
+        <div><label>온·습도계 모델</label><input id="e_dev" placeholder="예: Testo 608-H1" value="JB-913"></div>
+        <div><label>검교정 유효기간</label><input type="date" id="e_cal" value=""></div>
+        <div><label>공조 상태 / 비고</label><input id="e_note" placeholder="예: 항온항습 가동" value="일과 시간 AC 가동"></div>
+      </div>
+      <table id="tblEnv"><tbody><tr><th class="rowhead">회차</th><th>측정 시각</th><th>온도 (°C)</th><th>습도 (%RH)</th></tr><tr><td class="rowhead">1회</td>
+      <td><input type="time" id="env_t1" style="border:none;text-align:center" value=""></td>
+      <td><input type="number" step="any" inputmode="decimal" id="env_temp1" placeholder="" value="26.4"></td><td><input type="number" step="any" inputmode="decimal" id="env_rh1" placeholder="" value="60"></td></tr><tr><td class="rowhead">2회</td>
+      <td><input type="time" id="env_t2" style="border:none;text-align:center" value=""></td>
+      <td><input type="number" step="any" inputmode="decimal" id="env_temp2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="env_rh2" placeholder="" value=""></td></tr><tr><td class="rowhead">3회</td>
+      <td><input type="time" id="env_t3" style="border:none;text-align:center" value=""></td>
+      <td><input type="number" step="any" inputmode="decimal" id="env_temp3" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="env_rh3" placeholder="" value=""></td></tr><tr><td class="rowhead">ave</td><td class="calc">–</td>
+        <td class="calc" id="env_temp_ave">26.4</td><td class="calc" id="env_rh_ave">60.0</td></tr>
+        <tr><td class="rowhead">sd</td><td class="calc">–</td>
+        <td class="calc" id="env_temp_sd">–</td><td class="calc" id="env_rh_sd">–</td></tr></tbody></table>
+      <div class="stat" id="statEnv"><span class="pill">온도 ave <b>26.4</b> ± – °C</span><span class="pill">습도 ave <b>60.0</b> ± – %RH</span><span class="pill">온도 <span class="verdict v-none">기준 미설정</span></span><span class="pill">습도 <span class="verdict v-none">기준 미설정</span></span></div>
+      <div class="spec">
+        <p class="spec-title">관리기준 — 환경 (근거 있는 값만 입력)</p>
+        <div><label>온도 하한 (°C)</label><input type="number" step="any" id="sp_t_lo" class="spec-in" value=""></div>
+        <div><label>온도 상한 (°C)</label><input type="number" step="any" id="sp_t_hi" class="spec-in" value=""></div>
+        <div><label>습도 하한 (%RH)</label><input type="number" step="any" id="sp_h_lo" class="spec-in" value=""></div>
+        <div><label>습도 상한 (%RH)</label><input type="number" step="any" id="sp_h_hi" class="spec-in" value=""></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. 광량 ───────────────────────── -->
+  <section class="card" id="sec3">
+    <div class="chead"><h2>3. 측정 광량 — 9포인트 (3 × 3) · 프린터 A / B</h2>
+      <label class="sw"><input type="checkbox" id="do_light" checked=""> 실시</label></div>
+    <p class="hint">A행 = 플랫폼 앞쪽(도어 방향) 기준. 두 프린터를 <b>동일 광량계·동일 조건</b>으로 측정해야 A↔B 비교가 유효합니다.</p>
+    <p class="skipmsg">▸ 미실시 — 저장 파일에 "미실시"로 기록되고 판정에서 제외됩니다.</p>
+    <div class="cbody">
+      <div id="lightBlocks"><div class="pblock"><h3>3-A. 프린터 A 광량</h3>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>광량계 모델</label><input id="l_A_dev" placeholder="예: UV Power Meter" value="E 조도계"></div>
+        <div><label>단위</label><select id="l_A_unit">
+          <option selected="">mW/cm²</option><option>µW/cm²</option><option>mJ/cm²</option></select></div>
+        <div><label>측정 파장 설정 (nm)</label><input id="l_A_wl" placeholder="405" value="405"></div>
+        <div><label>측정 시각</label><input type="time" id="l_A_time" value=""></div>
+      </div><table><tbody><tr><th class="rowhead">위치</th><th>열 1</th><th>열 2</th><th>열 3</th><th>행 ave</th><th>행 sd</th></tr><tr><td class="rowhead">행 A</td><td><input type="number" step="any" inputmode="decimal" id="li_A_A1" placeholder="A1" value="9.285"></td><td><input type="number" step="any" inputmode="decimal" id="li_A_A2" placeholder="A2" value="8.58"></td><td><input type="number" step="any" inputmode="decimal" id="li_A_A3" placeholder="A3" value="8.361"></td><td class="calc" id="li_A_ave_A">8.74</td><td class="calc" id="li_A_sd_A">0.48</td></tr><tr><td class="rowhead">행 B</td><td><input type="number" step="any" inputmode="decimal" id="li_A_B1" placeholder="B1" value="8.554"></td><td><input type="number" step="any" inputmode="decimal" id="li_A_B2" placeholder="B2" value="8.0"></td><td><input type="number" step="any" inputmode="decimal" id="li_A_B3" placeholder="B3" value="9.147"></td><td class="calc" id="li_A_ave_B">8.57</td><td class="calc" id="li_A_sd_B">0.57</td></tr><tr><td class="rowhead">행 C</td><td><input type="number" step="any" inputmode="decimal" id="li_A_C1" placeholder="C1" value="8.78"></td><td><input type="number" step="any" inputmode="decimal" id="li_A_C2" placeholder="C2" value="8.9"></td><td><input type="number" step="any" inputmode="decimal" id="li_A_C3" placeholder="C3" value="8.73"></td><td class="calc" id="li_A_ave_C">8.80</td><td class="calc" id="li_A_sd_C">0.09</td></tr><tr><td class="rowhead">열 ave</td><td class="calc" id="li_A_ave_c1">8.87</td><td class="calc" id="li_A_ave_c2">8.49</td><td class="calc" id="li_A_ave_c3">8.75</td><td class="calc" id="li_A_ave_all">8.70</td><td class="calc" id="li_A_sd_all">0.39</td></tr></tbody></table><div class="stat" id="statLight_A"><span class="pill">ave <b>8.70</b> mW/cm²</span><span class="pill">sd <b>0.39</b></span><span class="pill">CV <b>4.5</b> %</span><span class="pill">min <b>8.00</b> / max <b>9.29</b></span><span class="pill">균일도 <b>86.2</b> %</span><span class="pill">n=<b>9</b>/9</span><span class="pill">광량 <span class="verdict v-pass">PASS</span></span><span class="pill">CV <span class="verdict v-none">기준 미설정</span></span><span class="pill">균일도 <span class="verdict v-none">기준 미설정</span></span></div></div><div class="pblock b"><h3>3-B. 프린터 B 광량</h3>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>광량계 모델</label><input id="l_B_dev" placeholder="예: UV Power Meter" value="E 조도계 "></div>
+        <div><label>단위</label><select id="l_B_unit">
+          <option selected="">mW/cm²</option><option>µW/cm²</option><option>mJ/cm²</option></select></div>
+        <div><label>측정 파장 설정 (nm)</label><input id="l_B_wl" placeholder="405" value=""></div>
+        <div><label>측정 시각</label><input type="time" id="l_B_time" value=""></div>
+      </div><table><tbody><tr><th class="rowhead">위치</th><th>열 1</th><th>열 2</th><th>열 3</th><th>행 ave</th><th>행 sd</th></tr><tr><td class="rowhead">행 A</td><td><input type="number" step="any" inputmode="decimal" id="li_B_A1" placeholder="A1" value="8.8"></td><td><input type="number" step="any" inputmode="decimal" id="li_B_A2" placeholder="A2" value="8.77"></td><td><input type="number" step="any" inputmode="decimal" id="li_B_A3" placeholder="A3" value="8.48"></td><td class="calc" id="li_B_ave_A">8.68</td><td class="calc" id="li_B_sd_A">0.18</td></tr><tr><td class="rowhead">행 B</td><td><input type="number" step="any" inputmode="decimal" id="li_B_B1" placeholder="B1" value="8.72"></td><td><input type="number" step="any" inputmode="decimal" id="li_B_B2" placeholder="B2" value="8.2"></td><td><input type="number" step="any" inputmode="decimal" id="li_B_B3" placeholder="B3" value="8.6"></td><td class="calc" id="li_B_ave_B">8.51</td><td class="calc" id="li_B_sd_B">0.27</td></tr><tr><td class="rowhead">행 C</td><td><input type="number" step="any" inputmode="decimal" id="li_B_C1" placeholder="C1" value="9.13"></td><td><input type="number" step="any" inputmode="decimal" id="li_B_C2" placeholder="C2" value="8.99"></td><td><input type="number" step="any" inputmode="decimal" id="li_B_C3" placeholder="C3" value="8.92"></td><td class="calc" id="li_B_ave_C">9.01</td><td class="calc" id="li_B_sd_C">0.11</td></tr><tr><td class="rowhead">열 ave</td><td class="calc" id="li_B_ave_c1">8.88</td><td class="calc" id="li_B_ave_c2">8.65</td><td class="calc" id="li_B_ave_c3">8.67</td><td class="calc" id="li_B_ave_all">8.73</td><td class="calc" id="li_B_sd_all">0.28</td></tr></tbody></table><div class="stat" id="statLight_B"><span class="pill">ave <b>8.73</b> mW/cm²</span><span class="pill">sd <b>0.28</b></span><span class="pill">CV <b>3.2</b> %</span><span class="pill">min <b>8.20</b> / max <b>9.13</b></span><span class="pill">균일도 <b>89.8</b> %</span><span class="pill">n=<b>9</b>/9</span><span class="pill">광량 <span class="verdict v-pass">PASS</span></span><span class="pill">CV <span class="verdict v-none">기준 미설정</span></span><span class="pill">균일도 <span class="verdict v-none">기준 미설정</span></span></div></div></div>
+      <div class="cmp" id="cmpLight"><h3>광량 A ↔ B 비교</h3><div class="stat"><span class="pill">A ave <b>8.70</b></span><span class="pill">B ave <b>8.73</b></span><span class="pill">Δ(A−B) <b>-0.03</b></span><span class="pill">Δ <b>0.3</b> %</span><span class="pill">A↔B 편차 <span class="verdict v-pass">PASS</span></span><span class="pill">동일 위치 최대 격차 <b>0.55</b> (B3)</span></div></div>
+      <div class="spec">
+        <p class="spec-title">관리기준 — 광량 (A·B 공통 적용)</p>
+        <div><label>광량 하한</label><input type="number" step="any" id="sp_l_lo" class="spec-in" value="8"></div>
+        <div><label>광량 상한</label><input type="number" step="any" id="sp_l_hi" class="spec-in" value="10"></div>
+        <div><label>CV 상한 (%)</label><input type="number" step="any" id="sp_l_cv" class="spec-in" value=""></div>
+        <div><label>균일도 하한 (min/max, %)</label><input type="number" step="any" id="sp_l_un" class="spec-in" value=""></div>
+        <div><label>A↔B 평균 편차 허용 (%)</label><input type="number" step="any" id="sp_l_ab" class="spec-in" value="5"></div>
+      </div>
+      <div class="note">균일도 = min / max × 100 · CV = sd / ave × 100 (sd 는 표본표준편차 n−1) · A↔B 편차% = |A−B| ÷ ((A+B)/2) × 100</div>
+    </div>
+  </section>
+
+  <!-- ── 4. Cure depth ───────────────────────── -->
+  <section class="card" id="sec4">
+    <div class="chead"><h2>4. Cure depth — 9포인트 × 3회 (27점) · 프린터 A / B</h2>
+      <label class="sw"><input type="checkbox" id="do_cure" checked=""> 실시</label></div>
+    <p class="hint">"3×3×3" 을 <b>플랫폼 3×3 = 9포인트 × 각 3회 반복 = 27 데이터</b>(프린터당)로 구현했습니다.</p>
+    <p class="skipmsg">▸ 미실시 — 저장 파일에 "미실시"로 기록되고 판정에서 제외됩니다.</p>
+    <div class="cbody">
+      <div id="cureBlocks"><div class="pblock"><h3>4-A. 프린터 A Cure depth</h3>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>측정 방식</label><input id="c_A_method" placeholder="예: 단일 노출 후 두께 측정" value="1 layer 출력 후 버니어로 측정"></div>
+        <div><label>노출 시간 (s)</label><input type="number" step="any" id="c_A_exp" value="1.2"></div>
+        <div><label>측정 단위</label><select id="c_A_unit"><option>mm</option><option selected="">µm</option></select></div>
+        <div><label>측정기 / 분해능</label><input id="c_A_dev" placeholder="예: 마이크로미터 1 µm" value="버니어캘리퍼스"></div>
+      </div><table><tbody><tr><th class="rowhead">포인트</th><th>1회</th><th>2회</th><th>3회</th><th>포인트 ave</th><th>포인트 sd</th></tr><tr><td class="rowhead">A1</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A1_1" placeholder="" value="60"></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A1_2" placeholder="" value="50"></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A1_3" placeholder="" value="70"></td><td class="calc" id="cu_A_ave_A1">60.000</td><td class="calc" id="cu_A_sd_A1">10.000</td></tr><tr><td class="rowhead">A2</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A2_1" placeholder="" value="70"></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A2_2" placeholder="" value="60"></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A2_3" placeholder="" value="70"></td><td class="calc" id="cu_A_ave_A2">66.667</td><td class="calc" id="cu_A_sd_A2">5.774</td></tr><tr><td class="rowhead">A3</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A3_1" placeholder="" value="60"></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A3_2" placeholder="" value="060"></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_A3_3" placeholder="" value="50"></td><td class="calc" id="cu_A_ave_A3">56.667</td><td class="calc" id="cu_A_sd_A3">5.774</td></tr><tr><td class="rowhead">B1</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B1_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B1_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B1_3" placeholder="" value=""></td><td class="calc" id="cu_A_ave_B1">–</td><td class="calc" id="cu_A_sd_B1">–</td></tr><tr><td class="rowhead">B2</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B2_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B2_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B2_3" placeholder="" value=""></td><td class="calc" id="cu_A_ave_B2">–</td><td class="calc" id="cu_A_sd_B2">–</td></tr><tr><td class="rowhead">B3</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B3_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B3_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_B3_3" placeholder="" value=""></td><td class="calc" id="cu_A_ave_B3">–</td><td class="calc" id="cu_A_sd_B3">–</td></tr><tr><td class="rowhead">C1</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C1_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C1_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C1_3" placeholder="" value=""></td><td class="calc" id="cu_A_ave_C1">–</td><td class="calc" id="cu_A_sd_C1">–</td></tr><tr><td class="rowhead">C2</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C2_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C2_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C2_3" placeholder="" value=""></td><td class="calc" id="cu_A_ave_C2">–</td><td class="calc" id="cu_A_sd_C2">–</td></tr><tr><td class="rowhead">C3</td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C3_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C3_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_A_C3_3" placeholder="" value=""></td><td class="calc" id="cu_A_ave_C3">–</td><td class="calc" id="cu_A_sd_C3">–</td></tr><tr><td class="rowhead">전체 (n=27)</td><td class="calc" colspan="3">ave / sd / CV → 아래 요약</td>
+          <td class="calc" id="cu_A_ave_all">61.111</td><td class="calc" id="cu_A_sd_all">7.817</td></tr></tbody></table><div class="stat" id="statCure_A"><span class="pill">전체 ave <b>61.111</b> µm</span><span class="pill">전체 sd <b>7.817</b></span><span class="pill">CV <b>12.8</b> %</span><span class="pill">최대 포인트내 sd <b>10.000</b> (A1)</span><span class="pill">n=<b>9</b>/27</span><span class="pill">ave <span class="verdict v-pass">PASS</span></span><span class="pill">반복 sd <span class="verdict v-none">기준 미설정</span></span><span class="pill">CV <span class="verdict v-none">기준 미설정</span></span></div></div><div class="pblock b"><h3>4-B. 프린터 B Cure depth</h3>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>측정 방식</label><input id="c_B_method" placeholder="예: 단일 노출 후 두께 측정" value="1 layer 출력 후 버니어로 측정"></div>
+        <div><label>노출 시간 (s)</label><input type="number" step="any" id="c_B_exp" value="1.2"></div>
+        <div><label>측정 단위</label><select id="c_B_unit"><option>mm</option><option selected="">µm</option></select></div>
+        <div><label>측정기 / 분해능</label><input id="c_B_dev" placeholder="예: 마이크로미터 1 µm" value="버니어캘리퍼스"></div>
+      </div><table><tbody><tr><th class="rowhead">포인트</th><th>1회</th><th>2회</th><th>3회</th><th>포인트 ave</th><th>포인트 sd</th></tr><tr><td class="rowhead">A1</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A1_1" placeholder="" value="60"></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A1_2" placeholder="" value="50"></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A1_3" placeholder="" value="60"></td><td class="calc" id="cu_B_ave_A1">56.667</td><td class="calc" id="cu_B_sd_A1">5.774</td></tr><tr><td class="rowhead">A2</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A2_1" placeholder="" value="70"></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A2_2" placeholder="" value="50"></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A2_3" placeholder="" value="060"></td><td class="calc" id="cu_B_ave_A2">60.000</td><td class="calc" id="cu_B_sd_A2">10.000</td></tr><tr><td class="rowhead">A3</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A3_1" placeholder="" value="60"></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A3_2" placeholder="" value="60"></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_A3_3" placeholder="" value="60"></td><td class="calc" id="cu_B_ave_A3">60.000</td><td class="calc" id="cu_B_sd_A3">0.000</td></tr><tr><td class="rowhead">B1</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B1_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B1_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B1_3" placeholder="" value=""></td><td class="calc" id="cu_B_ave_B1">–</td><td class="calc" id="cu_B_sd_B1">–</td></tr><tr><td class="rowhead">B2</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B2_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B2_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B2_3" placeholder="" value=""></td><td class="calc" id="cu_B_ave_B2">–</td><td class="calc" id="cu_B_sd_B2">–</td></tr><tr><td class="rowhead">B3</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B3_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B3_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_B3_3" placeholder="" value=""></td><td class="calc" id="cu_B_ave_B3">–</td><td class="calc" id="cu_B_sd_B3">–</td></tr><tr><td class="rowhead">C1</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C1_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C1_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C1_3" placeholder="" value=""></td><td class="calc" id="cu_B_ave_C1">–</td><td class="calc" id="cu_B_sd_C1">–</td></tr><tr><td class="rowhead">C2</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C2_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C2_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C2_3" placeholder="" value=""></td><td class="calc" id="cu_B_ave_C2">–</td><td class="calc" id="cu_B_sd_C2">–</td></tr><tr><td class="rowhead">C3</td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C3_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C3_2" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="cu_B_C3_3" placeholder="" value=""></td><td class="calc" id="cu_B_ave_C3">–</td><td class="calc" id="cu_B_sd_C3">–</td></tr><tr><td class="rowhead">전체 (n=27)</td><td class="calc" colspan="3">ave / sd / CV → 아래 요약</td>
+          <td class="calc" id="cu_B_ave_all">58.889</td><td class="calc" id="cu_B_sd_all">6.009</td></tr></tbody></table><div class="stat" id="statCure_B"><span class="pill">전체 ave <b>58.889</b> µm</span><span class="pill">전체 sd <b>6.009</b></span><span class="pill">CV <b>10.2</b> %</span><span class="pill">최대 포인트내 sd <b>10.000</b> (A2)</span><span class="pill">n=<b>9</b>/27</span><span class="pill">ave <span class="verdict v-pass">PASS</span></span><span class="pill">반복 sd <span class="verdict v-none">기준 미설정</span></span><span class="pill">CV <span class="verdict v-none">기준 미설정</span></span></div></div></div>
+      <div class="cmp" id="cmpCure"><h3>Cure depth A ↔ B 비교</h3><div class="stat"><span class="pill">A ave <b>61.111</b></span><span class="pill">B ave <b>58.889</b></span><span class="pill">Δ(A−B) <b>2.222</b></span><span class="pill">Δ <b>3.7</b> %</span><span class="pill">A↔B 편차 <span class="verdict v-pass">PASS</span></span><span class="pill">동일 위치 최대 격차 <b>6.667</b> (A2)</span></div></div>
+      <div class="spec">
+        <p class="spec-title">관리기준 — Cure depth (A·B 공통 적용)</p>
+        <div><label>Cure depth 하한</label><input type="number" step="any" id="sp_c_lo" class="spec-in" value="40"></div>
+        <div><label>Cure depth 상한</label><input type="number" step="any" id="sp_c_hi" class="spec-in" value="70"></div>
+        <div><label>포인트내 sd 상한</label><input type="number" step="any" id="sp_c_sd" class="spec-in" value=""></div>
+        <div><label>전체 CV 상한 (%)</label><input type="number" step="any" id="sp_c_cv" class="spec-in" value=""></div>
+        <div><label>A↔B 평균 편차 허용 (%)</label><input type="number" step="any" id="sp_c_ab" class="spec-in" value="10"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. 정밀도 (선택) ───────────────────────── -->
+  <section class="card off" id="sec5">
+    <div class="chead"><h2>5. 정밀도 — 인레이 10개 / 비니어 10개</h2><span class="req">선택</span>
+      <label class="sw"><input type="checkbox" id="do_prec"> 실시</label></div>
+    <p class="hint">열 제목은 직접 수정 가능(기본값은 예시, 단위 µm). 각 모델이 어느 프린터 출력물인지 <b>프린터 열</b>에 A / B 로 표기하면 A/B 부분집합 통계가 함께 계산됩니다.</p>
+    <p class="skipmsg">▸ 미실시 — 이 일지는 1–4 범위로 마감됩니다.</p>
+    <div class="cbody">
+      <div class="grid g3" style="margin-bottom:10px">
+        <div><label>스캐너 / 측정 장비</label><input id="p_dev" placeholder="예: 데스크탑 스캐너" value="버니어캘리퍼스"></div>
+        <div><label>정합 소프트웨어 / 방식</label><input id="p_sw" placeholder="예: best-fit alignment" value=""></div>
+        <div><label>기준 CAD 파일</label><input id="p_ref" placeholder="예: inlay_ref_v2.stl" value=""></div>
+      </div>
+      <h3 style="font-size:12.5px;margin:14px 0 6px">5-1. 인레이 (Inlay) · n=10</h3>
+      <table id="tblInlay"><tbody><tr><th class="rowhead">모델 #</th><th style="width:76px">프린터</th><th><input id="hd_inlay_0" value="RMS 오차 (µm)" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th><th><input id="hd_inlay_1" value="최대 편차 (µm)" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th><th><input id="hd_inlay_2" value="마진 갭 (µm)" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th><th>비고</th></tr><tr><td class="rowhead">1</td>
+      <td><select id="pr_inlay_1_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value=""></option><option selected="">A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_1_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_1_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_1_2" placeholder="" value=""></td><td><input id="pr_inlay_1_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">2</td>
+      <td><select id="pr_inlay_2_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_2_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_2_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_2_2" placeholder="" value=""></td><td><input id="pr_inlay_2_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">3</td>
+      <td><select id="pr_inlay_3_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_3_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_3_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_3_2" placeholder="" value=""></td><td><input id="pr_inlay_3_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">4</td>
+      <td><select id="pr_inlay_4_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_4_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_4_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_4_2" placeholder="" value=""></td><td><input id="pr_inlay_4_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">5</td>
+      <td><select id="pr_inlay_5_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_5_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_5_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_5_2" placeholder="" value=""></td><td><input id="pr_inlay_5_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">6</td>
+      <td><select id="pr_inlay_6_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_6_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_6_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_6_2" placeholder="" value=""></td><td><input id="pr_inlay_6_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">7</td>
+      <td><select id="pr_inlay_7_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_7_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_7_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_7_2" placeholder="" value=""></td><td><input id="pr_inlay_7_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">8</td>
+      <td><select id="pr_inlay_8_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_8_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_8_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_8_2" placeholder="" value=""></td><td><input id="pr_inlay_8_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">9</td>
+      <td><select id="pr_inlay_9_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_9_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_9_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_9_2" placeholder="" value=""></td><td><input id="pr_inlay_9_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">10</td>
+      <td><select id="pr_inlay_10_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_10_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_10_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_inlay_10_2" placeholder="" value=""></td><td><input id="pr_inlay_10_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">ave</td><td class="rowhead">전체</td><td class="calc" id="pr_inlay_ave_0">–</td><td class="calc" id="pr_inlay_ave_1">–</td><td class="calc" id="pr_inlay_ave_2">–</td><td class="calc">–</td></tr><tr><td class="rowhead">sd</td><td class="rowhead">전체</td><td class="calc" id="pr_inlay_sd_0">–</td><td class="calc" id="pr_inlay_sd_1">–</td><td class="calc" id="pr_inlay_sd_2">–</td><td class="calc">–</td></tr><tr><td class="rowhead">max</td><td class="rowhead">전체</td><td class="calc" id="pr_inlay_max_0">–</td><td class="calc" id="pr_inlay_max_1">–</td><td class="calc" id="pr_inlay_max_2">–</td><td class="calc">–</td></tr><tr><td class="rowhead">ave</td><td class="rowhead">A 만</td><td class="calc" id="pr_inlay_aveA_0">–</td><td class="calc" id="pr_inlay_aveA_1">–</td><td class="calc" id="pr_inlay_aveA_2">–</td><td class="calc" id="pr_inlay_nA">n=0</td></tr><tr><td class="rowhead">ave</td><td class="rowhead">B 만</td><td class="calc" id="pr_inlay_aveB_0">–</td><td class="calc" id="pr_inlay_aveB_1">–</td><td class="calc" id="pr_inlay_aveB_2">–</td><td class="calc" id="pr_inlay_nB">n=0</td></tr></tbody></table>
+      <div class="btnbar" style="margin-top:6px">
+        <button class="mini" onclick="fillPrinterCol('inlay')">프린터 열 채우기 (1–5=A, 6–10=B)</button></div>
+      <div class="stat" id="statInlay"></div>
+      <h3 style="font-size:12.5px;margin:16px 0 6px">5-2. 비니어 (Veneer) · n=10</h3>
+      <table id="tblVeneer"><tbody><tr><th class="rowhead">모델 #</th><th style="width:76px">프린터</th><th><input id="hd_veneer_0" value="RMS 오차 (µm)" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th><th><input id="hd_veneer_1" value="최대 편차 (µm)" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th><th><input id="hd_veneer_2" value="두께 편차 (µm)" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th><th>비고</th></tr><tr><td class="rowhead">1</td>
+      <td><select id="pr_veneer_1_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_1_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_1_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_1_2" placeholder="" value=""></td><td><input id="pr_veneer_1_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">2</td>
+      <td><select id="pr_veneer_2_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_2_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_2_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_2_2" placeholder="" value=""></td><td><input id="pr_veneer_2_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">3</td>
+      <td><select id="pr_veneer_3_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_3_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_3_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_3_2" placeholder="" value=""></td><td><input id="pr_veneer_3_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">4</td>
+      <td><select id="pr_veneer_4_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_4_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_4_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_4_2" placeholder="" value=""></td><td><input id="pr_veneer_4_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">5</td>
+      <td><select id="pr_veneer_5_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_5_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_5_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_5_2" placeholder="" value=""></td><td><input id="pr_veneer_5_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">6</td>
+      <td><select id="pr_veneer_6_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_6_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_6_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_6_2" placeholder="" value=""></td><td><input id="pr_veneer_6_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">7</td>
+      <td><select id="pr_veneer_7_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_7_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_7_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_7_2" placeholder="" value=""></td><td><input id="pr_veneer_7_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">8</td>
+      <td><select id="pr_veneer_8_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_8_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_8_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_8_2" placeholder="" value=""></td><td><input id="pr_veneer_8_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">9</td>
+      <td><select id="pr_veneer_9_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_9_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_9_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_9_2" placeholder="" value=""></td><td><input id="pr_veneer_9_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">10</td>
+      <td><select id="pr_veneer_10_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value="" selected=""></option><option>A</option><option>B</option></select></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_10_0" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_10_1" placeholder="" value=""></td><td><input type="number" step="any" inputmode="decimal" id="pr_veneer_10_2" placeholder="" value=""></td><td><input id="pr_veneer_10_memo" style="border:none;font-size:11.5px" value=""></td></tr><tr><td class="rowhead">ave</td><td class="rowhead">전체</td><td class="calc" id="pr_veneer_ave_0">–</td><td class="calc" id="pr_veneer_ave_1">–</td><td class="calc" id="pr_veneer_ave_2">–</td><td class="calc">–</td></tr><tr><td class="rowhead">sd</td><td class="rowhead">전체</td><td class="calc" id="pr_veneer_sd_0">–</td><td class="calc" id="pr_veneer_sd_1">–</td><td class="calc" id="pr_veneer_sd_2">–</td><td class="calc">–</td></tr><tr><td class="rowhead">max</td><td class="rowhead">전체</td><td class="calc" id="pr_veneer_max_0">–</td><td class="calc" id="pr_veneer_max_1">–</td><td class="calc" id="pr_veneer_max_2">–</td><td class="calc">–</td></tr><tr><td class="rowhead">ave</td><td class="rowhead">A 만</td><td class="calc" id="pr_veneer_aveA_0">–</td><td class="calc" id="pr_veneer_aveA_1">–</td><td class="calc" id="pr_veneer_aveA_2">–</td><td class="calc" id="pr_veneer_nA">n=0</td></tr><tr><td class="rowhead">ave</td><td class="rowhead">B 만</td><td class="calc" id="pr_veneer_aveB_0">–</td><td class="calc" id="pr_veneer_aveB_1">–</td><td class="calc" id="pr_veneer_aveB_2">–</td><td class="calc" id="pr_veneer_nB">n=0</td></tr></tbody></table>
+      <div class="btnbar" style="margin-top:6px">
+        <button class="mini" onclick="fillPrinterCol('veneer')">프린터 열 채우기 (1–5=A, 6–10=B)</button></div>
+      <div class="stat" id="statVeneer"></div>
+      <div class="spec">
+        <p class="spec-title">관리기준 — 정밀도 (항목① 기준)</p>
+        <div><label>인레이 항목① 상한 (µm)</label><input type="number" step="any" id="sp_i_hi" class="spec-in" value=""></div>
+        <div><label>인레이 sd 상한 (µm)</label><input type="number" step="any" id="sp_i_sd" class="spec-in" value=""></div>
+        <div><label>비니어 항목① 상한 (µm)</label><input type="number" step="any" id="sp_v_hi" class="spec-in" value=""></div>
+        <div><label>비니어 sd 상한 (µm)</label><input type="number" step="any" id="sp_v_sd" class="spec-in" value=""></div>
+      </div>
+      <div class="ask">정밀도도 <b>프린터별 10개씩(A 10 + B 10)</b> 으로 완전 분리할까요? 현재는 "총 10개 + 프린터 표기" 구조입니다.</div>
+    </div>
+  </section>
+
+  <!-- ── 6. 사진 (선택) ───────────────────────── -->
+  <section class="card off" id="sec6">
+    <div class="chead"><h2>6. 임상 출력물 사진</h2><span class="req">선택</span>
+      <label class="sw"><input type="checkbox" id="do_photo"> 실시</label></div>
+    <p class="hint">장변 1600 px / JPEG 로 자동 축소되어 <b>저장 HTML 안에 함께 들어갑니다</b>(별도 이미지 파일 불필요).</p>
+    <p class="skipmsg">▸ 미실시 — 사진 없이 마감됩니다.</p>
+    <div class="cbody">
+      <div class="drop" id="drop">사진을 여기로 드래그하거나
+        <input type="file" id="fileIn" accept="image/*" multiple="" style="display:inline-block;width:auto;border:none"></div>
+      <div class="photos" id="photos"></div>
+      <div class="note" id="photoSize">사진 없음</div>
+    </div>
+  </section>
+
+  <!-- ── 7. 종합 (필수) ───────────────────────── -->
+  <section class="card" id="sec7">
+    <div class="chead"><h2>7. 종합 판정 및 조치</h2><span class="req">필수</span></div>
+    <div class="cbody">
+      <div class="grid g2">
+        <div><label>자동 판정 요약</label><div id="autoVerdict" style="padding:6px 0"><span class="verdict v-pass">설정된 기준 내 이탈 없음</span></div></div>
+        <div><label>최종 판정 (작성자 확정)</label>
+          <select id="f_verdict"><option value="" selected="">— 선택 —</option>
+            <option>PASS</option><option>관찰(WATCH)</option><option>FAIL</option></select></div>
+      </div>
+      <div class="grid g2" style="margin-top:10px">
+        <div><label>특이사항 / 이상 현상</label><textarea id="f_issue" placeholder="예: 프린터 B C3 포인트 광량 저하">프린터 B의 광량 이상 (세팅 값: 11.0 mW/cm^2)으로 광량 QC 재실시. 현재는 프린터 A와 프린터 B 사이에서 유사한 수준의 광량이 확인됨</textarea></div>
+        <div><label>조치 / 후속 계획</label><textarea id="f_action" placeholder="예: B 광원 점검 및 FEP 교체 후 재측정"></textarea></div>
+      </div>
+      <div class="grid g3" style="margin-top:10px">
+        <div><label>작성자 확인</label><input id="f_sign1" placeholder="이름 / 날짜" value=""></div>
+        <div><label>검토자 확인</label><input id="f_sign2" placeholder="이름 / 날짜" value=""></div>
+        <div><label>실시 범위 (자동)</label><input id="f_scope" readonly="" style="background:#f7f9fb" value="환경 · 광량 · CureDepth"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="sticky">
+    <div class="btnbar">
+      <button class="primary" onclick="saveHTML()">▼ HTML로 저장 (입력값·사진 포함)</button>
+      <button onclick="downloadCSV()">CSV 내보내기</button>
+      <button onclick="copyTSV('raw')">Raw TSV 복사</button>
+      <button onclick="window.print()">인쇄 / PDF</button>
+      <button onclick="document.getElementById('htmlIn').click()">저장 파일 불러오기</button>
+      <input type="file" id="htmlIn" accept=".html,.htm,.json" style="display:none">
+      <button onclick="resetForm()">초기화</button>
+      <span id="draftInfo" style="color:var(--sub);font-size:11.5px">자동 임시저장 오후 1:19:33 (사진 제외)</span>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═════ 상수 ═════ */
+const PRN  = ['A','B'];
+const ROWS = ['A','B','C'], COLS = ['1','2','3'];
+const PTS  = ROWS.flatMap(r => COLS.map(c => r + c));
+const REPS = 3, NMODEL = 10;
+const PREC_TYPES = [
+  {key:'inlay',  label:'인레이', tbl:'tblInlay',  stat:'statInlay',
+   cols:['RMS 오차 (µm)','최대 편차 (µm)','마진 갭 (µm)']},
+  {key:'veneer', label:'비니어', tbl:'tblVeneer', stat:'statVeneer',
+   cols:['RMS 오차 (µm)','최대 편차 (µm)','두께 편차 (µm)']}
+];
+const SECTIONS = [
+  {key:'env',   sw:'do_env',   sec:'sec2', label:'환경'},
+  {key:'light', sw:'do_light', sec:'sec3', label:'광량'},
+  {key:'cure',  sw:'do_cure',  sec:'sec4', label:'CureDepth'},
+  {key:'prec',  sw:'do_prec',  sec:'sec5', label:'정밀도'},
+  {key:'photo', sw:'do_photo', sec:'sec6', label:'사진'}
+];
+const DEC = {env:1, light:2, cure:3, prec:1};
+
+/* ═════ 유틸 ═════ */
+const G = id => document.getElementById(id);
+const V = id => G(id) ? G(id).value : '';
+const toNum = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
+const N  = id => toNum(V(id));
+const on = key => { const e = G(SECTIONS.find(s=>s.key===key).sw); return e ? e.checked : false; };
+const vals = a => a.filter(v => v !== null);
+function mean(a){ a = vals(a); return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; }
+function sd(a){ a = vals(a); if(a.length < 2) return null;
+  const m = mean(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/(a.length-1)); }
+function cv(a){ const m = mean(a), s = sd(a); return (m && s !== null && m !== 0) ? s/m*100 : null; }
+const fx = (v,d) => (v === null || v === undefined) ? '–' : v.toFixed(d);
+function toast(m){ const t = G('toast'); t.textContent = m; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 3400); }
+/* 파일(file://)로 열면 브라우저에 따라 localStorage 가 차단됩니다 — 그래도 폼은 동작해야 하므로 감싸 둡니다.
+   차단 시 자동 임시저장만 비활성되고, [HTML로 저장] 은 정상 동작합니다. */
+const LS = {
+  ok: (() => { try{ localStorage.setItem('__qc','1'); localStorage.removeItem('__qc'); return true; }
+               catch(e){ return false; } })(),
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+
+/* ═════ 표 생성 ═════ */
+const cellIn = (id,ph) => `<input type="number" step="any" inputmode="decimal" id="${id}" placeholder="${ph||''}">`;
+const cls = P => P === 'B' ? ' b' : '';
+
+function buildPrinterMeta(){
+  G('printerMeta').innerHTML = PRN.map(P => `
+    <div class="pblock${cls(P)}" style="margin-top:12px">
+      <h3>프린터 ${P}</h3>
+      <div class="grid g4">
+        <div><label>모델 / S/N</label><input id="m_${P}_printer" placeholder="예: LCD 4K / SN-xxxx"></div>
+        <div><label>파장 (nm)</label><input id="m_${P}_wl" value="405"></div>
+        <div><label>FEP·필름 사용시간 (h)</label><input type="number" step="any" id="m_${P}_fep"></div>
+        <div><label>누적 출력시간 (h)</label><input type="number" step="any" id="m_${P}_hours"></div>
+        <div><label>레진 잔량 / 교체</label><input id="m_${P}_resin" placeholder="예: 320 g / 신규 투입"></div>
+        <div><label>레진 Lot (공통과 다를 때만)</label><input id="m_${P}_lot" placeholder="비우면 공통 Lot"></div>
+        <div style="grid-column:span 2"><label>비고</label><input id="m_${P}_note" placeholder="예: 광원 교체 3일 경과"></div>
+      </div>
+    </div>`).join('');
+}
+function buildEnv(){
+  let h = '<tr><th class="rowhead">회차</th><th>측정 시각</th><th>온도 (°C)</th><th>습도 (%RH)</th></tr>';
+  for(let i=1;i<=3;i++)
+    h += `<tr><td class="rowhead">${i}회</td>
+      <td><input type="time" id="env_t${i}" style="border:none;text-align:center"></td>
+      <td>${cellIn('env_temp'+i)}</td><td>${cellIn('env_rh'+i)}</td></tr>`;
+  h += `<tr><td class="rowhead">ave</td><td class="calc">–</td>
+        <td class="calc" id="env_temp_ave">–</td><td class="calc" id="env_rh_ave">–</td></tr>
+        <tr><td class="rowhead">sd</td><td class="calc">–</td>
+        <td class="calc" id="env_temp_sd">–</td><td class="calc" id="env_rh_sd">–</td></tr>`;
+  G('tblEnv').innerHTML = h;
+}
+function buildLight(){
+  G('lightBlocks').innerHTML = PRN.map(P => {
+    let t = '<tr><th class="rowhead">위치</th>' + COLS.map(c=>`<th>열 ${c}</th>`).join('') +
+            '<th>행 ave</th><th>행 sd</th></tr>';
+    ROWS.forEach(r => {
+      t += `<tr><td class="rowhead">행 ${r}</td>` +
+        COLS.map(c => `<td>${cellIn(`li_${P}_${r}${c}`, r+c)}</td>`).join('') +
+        `<td class="calc" id="li_${P}_ave_${r}">–</td><td class="calc" id="li_${P}_sd_${r}">–</td></tr>`;
+    });
+    t += '<tr><td class="rowhead">열 ave</td>' + COLS.map(c=>`<td class="calc" id="li_${P}_ave_c${c}">–</td>`).join('') +
+         `<td class="calc" id="li_${P}_ave_all">–</td><td class="calc" id="li_${P}_sd_all">–</td></tr>`;
+    return `<div class="pblock${cls(P)}"><h3>3-${P}. 프린터 ${P} 광량</h3>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>광량계 모델</label><input id="l_${P}_dev" placeholder="예: UV Power Meter"></div>
+        <div><label>단위</label><select id="l_${P}_unit">
+          <option>mW/cm²</option><option>µW/cm²</option><option>mJ/cm²</option></select></div>
+        <div><label>측정 파장 설정 (nm)</label><input id="l_${P}_wl" placeholder="405"></div>
+        <div><label>측정 시각</label><input type="time" id="l_${P}_time"></div>
+      </div><table>${t}</table><div class="stat" id="statLight_${P}"></div></div>`;
+  }).join('');
+}
+function buildCure(){
+  G('cureBlocks').innerHTML = PRN.map(P => {
+    let t = '<tr><th class="rowhead">포인트</th>' +
+      Array.from({length:REPS},(_,i)=>`<th>${i+1}회</th>`).join('') + '<th>포인트 ave</th><th>포인트 sd</th></tr>';
+    PTS.forEach(p => {
+      t += `<tr><td class="rowhead">${p}</td>` +
+        Array.from({length:REPS},(_,i)=>`<td>${cellIn(`cu_${P}_${p}_${i+1}`)}</td>`).join('') +
+        `<td class="calc" id="cu_${P}_ave_${p}">–</td><td class="calc" id="cu_${P}_sd_${p}">–</td></tr>`;
+    });
+    t += `<tr><td class="rowhead">전체 (n=27)</td><td class="calc" colspan="${REPS}">ave / sd / CV → 아래 요약</td>
+          <td class="calc" id="cu_${P}_ave_all">–</td><td class="calc" id="cu_${P}_sd_all">–</td></tr>`;
+    return `<div class="pblock${cls(P)}"><h3>4-${P}. 프린터 ${P} Cure depth</h3>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>측정 방식</label><input id="c_${P}_method" placeholder="예: 단일 노출 후 두께 측정"></div>
+        <div><label>노출 시간 (s)</label><input type="number" step="any" id="c_${P}_exp"></div>
+        <div><label>측정 단위</label><select id="c_${P}_unit"><option>mm</option><option>µm</option></select></div>
+        <div><label>측정기 / 분해능</label><input id="c_${P}_dev" placeholder="예: 마이크로미터 1 µm"></div>
+      </div><table>${t}</table><div class="stat" id="statCure_${P}"></div></div>`;
+  }).join('');
+}
+function buildPrec(t){
+  let h = '<tr><th class="rowhead">모델 #</th><th style="width:76px">프린터</th>' +
+    t.cols.map((c,j)=>`<th><input id="hd_${t.key}_${j}" value="${c}" style="border:none;background:transparent;text-align:center;font-weight:700;font-size:11.5px;color:inherit"></th>`).join('') +
+    '<th>비고</th></tr>';
+  for(let i=1;i<=NMODEL;i++)
+    h += `<tr><td class="rowhead">${i}</td>
+      <td><select id="pr_${t.key}_${i}_prn" style="border:none;padding:3px;font-size:11.5px">
+        <option value=""></option><option>A</option><option>B</option></select></td>` +
+      t.cols.map((_,j)=>`<td>${cellIn(`pr_${t.key}_${i}_${j}`)}</td>`).join('') +
+      `<td><input id="pr_${t.key}_${i}_memo" style="border:none;font-size:11.5px"></td></tr>`;
+  ['ave','sd','max'].forEach(k => {
+    h += `<tr><td class="rowhead">${k}</td><td class="rowhead">전체</td>` +
+      t.cols.map((_,j)=>`<td class="calc" id="pr_${t.key}_${k}_${j}">–</td>`).join('') + '<td class="calc">–</td></tr>';
+  });
+  PRN.forEach(P => {
+    h += `<tr><td class="rowhead">ave</td><td class="rowhead">${P} 만</td>` +
+      t.cols.map((_,j)=>`<td class="calc" id="pr_${t.key}_ave${P}_${j}">–</td>`).join('') +
+      `<td class="calc" id="pr_${t.key}_n${P}">–</td></tr>`;
+  });
+  G(t.tbl).innerHTML = h;
+}
+function fillPrinterCol(key){
+  for(let i=1;i<=NMODEL;i++){ const e = G(`pr_${key}_${i}_prn`); if(e) e.value = i <= 5 ? 'A' : 'B'; }
+  recalc(); toast('프린터 열 채움 — 필요하면 개별 수정');
+}
+
+/* ═════ 판정 ═════ */
+function judge(v, lo, hi){
+  if(v === null || v === undefined) return null;
+  const L = toNum(lo), H = toNum(hi);
+  if(L === null && H === null) return null;
+  if(L !== null && v < L) return false;
+  if(H !== null && v > H) return false;
+  return true;
+}
+const badge = j => j === null ? '<span class="verdict v-none">기준 미설정</span>'
+  : j ? '<span class="verdict v-pass">PASS</span>' : '<span class="verdict v-fail">FAIL</span>';
+
+/* ═════ 섹션 on/off ═════ */
+function syncSections(){
+  SECTIONS.forEach(s => G(s.sec).classList.toggle('off', !on(s.key)));
+  const done = SECTIONS.filter(s => on(s.key)).map(s => s.label);
+  const label = done.length ? done.join(' · ') : '기본 정보만';
+  G('scopeNow').textContent = '실시: ' + label;
+  G('f_scope').value = label;
+}
+function setScope(n){
+  G('do_env').checked = true; G('do_light').checked = true; G('do_cure').checked = true;
+  G('do_prec').checked  = n >= 5;
+  G('do_photo').checked = n >= 6;
+  recalc(); toast(n === 4 ? '1–4 범위로 설정' : n === 5 ? '1–5 범위로 설정' : '전체 범위로 설정');
+}
+
+/* ═════ 재계산 ═════ */
+let flags = [];
+const S = {light:{}, cure:{}, prec:{}, lightAB:{}, cureAB:{}};
+
+function recalc(){
+  flags = []; syncSections();
+
+  /* 2. 환경 */
+  const temps = [1,2,3].map(i=>N('env_temp'+i)), rhs = [1,2,3].map(i=>N('env_rh'+i));
+  S.tempAve = mean(temps); S.tempSd = sd(temps); S.rhAve = mean(rhs); S.rhSd = sd(rhs);
+  G('env_temp_ave').textContent = fx(S.tempAve,DEC.env); G('env_rh_ave').textContent = fx(S.rhAve,DEC.env);
+  G('env_temp_sd').textContent  = fx(S.tempSd,DEC.env);  G('env_rh_sd').textContent  = fx(S.rhSd,DEC.env);
+  if(on('env')){
+    const jT = judge(S.tempAve,V('sp_t_lo'),V('sp_t_hi')), jH = judge(S.rhAve,V('sp_h_lo'),V('sp_h_hi'));
+    G('statEnv').innerHTML =
+      `<span class="pill">온도 ave <b>${fx(S.tempAve,DEC.env)}</b> ± ${fx(S.tempSd,DEC.env)} °C</span>` +
+      `<span class="pill">습도 ave <b>${fx(S.rhAve,DEC.env)}</b> ± ${fx(S.rhSd,DEC.env)} %RH</span>` +
+      `<span class="pill">온도 ${badge(jT)}</span><span class="pill">습도 ${badge(jH)}</span>`;
+    if(jT === false) flags.push('환경-온도');
+    if(jH === false) flags.push('환경-습도');
+  } else G('statEnv').innerHTML = '';
+
+  /* 3. 광량 */
+  S.light = {};
+  PRN.forEach(P => {
+    const all = [];
+    ROWS.forEach(r => {
+      const row = COLS.map(c => N(`li_${P}_${r}${c}`));
+      all.push(...row);
+      G(`li_${P}_ave_${r}`).textContent = fx(mean(row),DEC.light);
+      G(`li_${P}_sd_${r}`).textContent  = fx(sd(row),DEC.light);
+    });
+    COLS.forEach(c => G(`li_${P}_ave_c${c}`).textContent = fx(mean(ROWS.map(r=>N(`li_${P}_${r}${c}`))),DEC.light));
+    const lv = vals(all);
+    const o = {ave:mean(all), sd:sd(all), cv:cv(all), n:lv.length, grid:all,
+               min:lv.length?Math.min(...lv):null, max:lv.length?Math.max(...lv):null};
+    o.uni = (o.min !== null && o.max) ? o.min/o.max*100 : null;
+    S.light[P] = o;
+    G(`li_${P}_ave_all`).textContent = fx(o.ave,DEC.light);
+    G(`li_${P}_sd_all`).textContent  = fx(o.sd,DEC.light);
+    if(!on('light')){ G(`statLight_${P}`).innerHTML = ''; return; }
+    const jL = judge(o.ave,V('sp_l_lo'),V('sp_l_hi')), jC = judge(o.cv,null,V('sp_l_cv')),
+          jU = judge(o.uni,V('sp_l_un'),null);
+    G(`statLight_${P}`).innerHTML =
+      `<span class="pill">ave <b>${fx(o.ave,DEC.light)}</b> ${V(`l_${P}_unit`)}</span>` +
+      `<span class="pill">sd <b>${fx(o.sd,DEC.light)}</b></span>` +
+      `<span class="pill">CV <b>${fx(o.cv,1)}</b> %</span>` +
+      `<span class="pill">min <b>${fx(o.min,DEC.light)}</b> / max <b>${fx(o.max,DEC.light)}</b></span>` +
+      `<span class="pill">균일도 <b>${fx(o.uni,1)}</b> %</span>` +
+      `<span class="pill">n=<b>${o.n}</b>/9</span>` +
+      `<span class="pill">광량 ${badge(jL)}</span><span class="pill">CV ${badge(jC)}</span><span class="pill">균일도 ${badge(jU)}</span>`;
+    if(jL === false) flags.push(`광량${P}-평균`);
+    if(jC === false) flags.push(`광량${P}-CV`);
+    if(jU === false) flags.push(`광량${P}-균일도`);
+  });
+  S.lightAB = on('light')
+    ? abCompare(S.light.A, S.light.B, 'cmpLight', '광량 A ↔ B 비교', DEC.light, V('sp_l_ab'), '광량')
+    : (G('cmpLight').innerHTML = '', {});
+
+  /* 4. Cure depth */
+  S.cure = {};
+  PRN.forEach(P => {
+    const all = []; let sdMax = null, sdMaxPt = '';
+    PTS.forEach(p => {
+      const rep = Array.from({length:REPS},(_,i)=>N(`cu_${P}_${p}_${i+1}`));
+      all.push(...rep);
+      const m = mean(rep), s = sd(rep);
+      G(`cu_${P}_ave_${p}`).textContent = fx(m,DEC.cure);
+      G(`cu_${P}_sd_${p}`).textContent  = fx(s,DEC.cure);
+      if(s !== null && (sdMax === null || s > sdMax)){ sdMax = s; sdMaxPt = p; }
+    });
+    const o = {ave:mean(all), sd:sd(all), cv:cv(all), n:vals(all).length,
+               ptSdMax:sdMax, ptSdMaxAt:sdMaxPt, grid:all};
+    S.cure[P] = o;
+    G(`cu_${P}_ave_all`).textContent = fx(o.ave,DEC.cure);
+    G(`cu_${P}_sd_all`).textContent  = fx(o.sd,DEC.cure);
+    if(!on('cure')){ G(`statCure_${P}`).innerHTML = ''; return; }
+    const jA = judge(o.ave,V('sp_c_lo'),V('sp_c_hi')), jS = judge(o.ptSdMax,null,V('sp_c_sd')),
+          jV = judge(o.cv,null,V('sp_c_cv'));
+    G(`statCure_${P}`).innerHTML =
+      `<span class="pill">전체 ave <b>${fx(o.ave,DEC.cure)}</b> ${V(`c_${P}_unit`)}</span>` +
+      `<span class="pill">전체 sd <b>${fx(o.sd,DEC.cure)}</b></span>` +
+      `<span class="pill">CV <b>${fx(o.cv,1)}</b> %</span>` +
+      `<span class="pill">최대 포인트내 sd <b>${fx(o.ptSdMax,DEC.cure)}</b> (${o.ptSdMaxAt||'–'})</span>` +
+      `<span class="pill">n=<b>${o.n}</b>/27</span>` +
+      `<span class="pill">ave ${badge(jA)}</span><span class="pill">반복 sd ${badge(jS)}</span><span class="pill">CV ${badge(jV)}</span>`;
+    if(jA === false) flags.push(`Cure${P}-평균`);
+    if(jS === false) flags.push(`Cure${P}-반복성`);
+    if(jV === false) flags.push(`Cure${P}-CV`);
+  });
+  S.cureAB = on('cure')
+    ? abCompare(S.cure.A, S.cure.B, 'cmpCure', 'Cure depth A ↔ B 비교', DEC.cure, V('sp_c_ab'), 'Cure')
+    : (G('cmpCure').innerHTML = '', {});
+
+  /* 5. 정밀도 */
+  S.prec = {};
+  PREC_TYPES.forEach(t => {
+    let pills = ''; const store = {};
+    t.cols.forEach((_,j) => {
+      const col = Array.from({length:NMODEL},(_,i)=>N(`pr_${t.key}_${i+1}_${j}`));
+      const cvv = vals(col), m = mean(col), s = sd(col);
+      G(`pr_${t.key}_ave_${j}`).textContent = fx(m,DEC.prec);
+      G(`pr_${t.key}_sd_${j}`).textContent  = fx(s,DEC.prec);
+      G(`pr_${t.key}_max_${j}`).textContent = cvv.length ? fx(Math.max(...cvv),DEC.prec) : '–';
+      PRN.forEach(P => {
+        const sub = col.filter((_,i)=>V(`pr_${t.key}_${i+1}_prn`) === P);
+        G(`pr_${t.key}_ave${P}_${j}`).textContent = fx(mean(sub),DEC.prec);
+        if(j === 0) G(`pr_${t.key}_n${P}`).textContent = 'n=' + vals(sub).length;
+        store[`ave${P}_${j}`] = mean(sub);
+      });
+      store[`ave_${j}`] = m; store[`sd_${j}`] = s;
+      pills += `<span class="pill">${V(`hd_${t.key}_${j}`)} : <b>${fx(m,DEC.prec)}</b> ± ${fx(s,DEC.prec)} (n=${cvv.length}/${NMODEL})</span>`;
+    });
+    S.prec[t.key] = store;
+    if(!on('prec')){ G(t.stat).innerHTML = ''; return; }
+    const c0 = Array.from({length:NMODEL},(_,i)=>N(`pr_${t.key}_${i+1}_0`));
+    const pre = t.key === 'inlay' ? 'i' : 'v';
+    const jm = judge(mean(c0),null,V('sp_'+pre+'_hi')), js = judge(sd(c0),null,V('sp_'+pre+'_sd'));
+    pills += `<span class="pill">항목① ave ${badge(jm)}</span><span class="pill">항목① sd ${badge(js)}</span>`;
+    if(store['aveA_0'] !== null && store['aveB_0'] !== null)
+      pills += `<span class="pill">A ${fx(store['aveA_0'],DEC.prec)} ↔ B ${fx(store['aveB_0'],DEC.prec)} · Δ <b>${fx(Math.abs(store['aveA_0']-store['aveB_0']),DEC.prec)}</b> µm</span>`;
+    G(t.stat).innerHTML = pills;
+    if(jm === false) flags.push(t.label+'-항목①ave');
+    if(js === false) flags.push(t.label+'-항목①sd');
+  });
+
+  /* 6. 사진 용량 */
+  const bytes = photos.reduce((s,p)=>s + (p.dataUrl ? p.dataUrl.length*0.75 : 0), 0);
+  G('photoSize').textContent = photos.length
+    ? `사진 ${photos.length}장 · 저장 파일 예상 증가분 약 ${(bytes/1048576).toFixed(1)} MB`
+    : '사진 없음';
+
+  /* 7. 종합 */
+  const anySpec = [...document.querySelectorAll('.spec-in')].some(e => e.value !== '');
+  G('autoVerdict').innerHTML = flags.length
+    ? `<span class="verdict v-fail">기준 이탈 ${flags.length}건</span> <span class="flag">${flags.join(', ')}</span>`
+    : anySpec ? '<span class="verdict v-pass">설정된 기준 내 이탈 없음</span>'
+              : '<span class="verdict v-none">관리기준 미입력 — 자동 판정 불가</span>';
+  saveDraft(true);
+}
+
+function abCompare(a, b, elId, title, dec, tolPct, tag){
+  const out = {dAve:null, dPct:null, dMaxPt:null, dMaxPtAt:''};
+  if(!a || !b){ G(elId).innerHTML = ''; return out; }
+  let html = `<h3>${title}</h3><div class="stat">`;
+  if(a.ave !== null && b.ave !== null){
+    out.dAve = a.ave - b.ave;
+    const base = (a.ave + b.ave)/2;
+    out.dPct = base ? Math.abs(out.dAve)/base*100 : null;
+    html += `<span class="pill">A ave <b>${fx(a.ave,dec)}</b></span>` +
+            `<span class="pill">B ave <b>${fx(b.ave,dec)}</b></span>` +
+            `<span class="pill">Δ(A−B) <b>${fx(out.dAve,dec)}</b></span>` +
+            `<span class="pill">Δ <b>${fx(out.dPct,1)}</b> %</span>`;
+    const j = judge(out.dPct,null,tolPct);
+    html += `<span class="pill">A↔B 편차 ${badge(j)}</span>`;
+    if(j === false) flags.push(`${tag}-AB편차`);
+  }
+  if(a.grid && b.grid && a.grid.length === b.grid.length){
+    let mx = null, at = '';
+    const per = a.grid.length / PTS.length;
+    PTS.forEach((p,i) => {
+      const av = mean(a.grid.slice(i*per,(i+1)*per)), bv = mean(b.grid.slice(i*per,(i+1)*per));
+      if(av === null || bv === null) return;
+      const d = Math.abs(av-bv);
+      if(mx === null || d > mx){ mx = d; at = p; }
+    });
+    out.dMaxPt = mx; out.dMaxPtAt = at;
+    if(mx !== null) html += `<span class="pill">동일 위치 최대 격차 <b>${fx(mx,dec)}</b> (${at})</span>`;
+  }
+  G(elId).innerHTML = html + '</div>';
+  return out;
+}
+
+/* ═════ 사진 ═════ */
+let photos = [];
+function addFiles(files){
+  [...files].forEach(f => {
+    if(!f.type.startsWith('image/')) return;
+    const fr = new FileReader();
+    fr.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1600, sc = Math.min(1, max/Math.max(img.width,img.height));
+        const cvs = document.createElement('canvas');
+        cvs.width = Math.round(img.width*sc); cvs.height = Math.round(img.height*sc);
+        cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
+        photos.push({name:f.name, printer:'', caption:'', dataUrl:cvs.toDataURL('image/jpeg',0.82)});
+        renderPhotos(); recalc();
+      };
+      img.src = e.target.result;
+    };
+    fr.readAsDataURL(f);
+  });
+}
+function renderPhotos(){
+  G('photos').innerHTML = photos.map((p,i)=>`
+    <div class="ph"><img src="${p.dataUrl}">
+      <div class="meta">
+        <select onchange="photos[${i}].printer=this.value">
+          <option value=""${p.printer?'':' selected'}>프린터 미지정</option>
+          ${PRN.map(P=>`<option${p.printer===P?' selected':''}>${P}</option>`).join('')}
+        </select>
+        <input placeholder="캡션 (예: #3 인레이 마진부)" value="${(p.caption||'').replace(/"/g,'&quot;')}"
+               oninput="photos[${i}].caption=this.value">
+        <button onclick="photos.splice(${i},1);renderPhotos();recalc()">삭제</button>
+      </div></div>`).join('');
+}
+
+/* ═════ 수집 ═════ */
+function collect(){
+  const o = {schema:'qc-daily-log/v0.3', printers:PRN, sections:{}, meta:{}, printerMeta:{},
+    env:{readings:[],spec:{}}, light:{}, cure:{}, precision:{},
+    photos:photos.map(p=>({name:p.name,printer:p.printer,caption:p.caption,dataUrl:p.dataUrl})),
+    final:{}, stats:{}, flags:flags.slice()};
+  SECTIONS.forEach(s => o.sections[s.key] = on(s.key));
+
+  ['date','docno','author','review','formula','lot','slicer','note'].forEach(k => o.meta[k] = V('m_'+k));
+  PRN.forEach(P => {
+    o.printerMeta[P] = {};
+    ['printer','wl','fep','hours','resin','lot','note'].forEach(k => o.printerMeta[P][k] = V(`m_${P}_${k}`));
+  });
+
+  o.env.device = V('e_dev'); o.env.calDue = V('e_cal'); o.env.note = V('e_note');
+  for(let i=1;i<=3;i++) o.env.readings.push({time:V('env_t'+i), temp:N('env_temp'+i), rh:N('env_rh'+i)});
+  o.env.spec = {tLo:N('sp_t_lo'), tHi:N('sp_t_hi'), hLo:N('sp_h_lo'), hHi:N('sp_h_hi')};
+
+  o.light.spec = {lo:N('sp_l_lo'), hi:N('sp_l_hi'), cvMax:N('sp_l_cv'), uniMin:N('sp_l_un'), abPct:N('sp_l_ab')};
+  o.cure.spec  = {lo:N('sp_c_lo'), hi:N('sp_c_hi'), sdMax:N('sp_c_sd'), cvMax:N('sp_c_cv'), abPct:N('sp_c_ab')};
+  PRN.forEach(P => {
+    o.light[P] = {device:V(`l_${P}_dev`), unit:V(`l_${P}_unit`), wl:V(`l_${P}_wl`), time:V(`l_${P}_time`), grid:{}};
+    PTS.forEach(p => o.light[P].grid[p] = N(`li_${P}_${p}`));
+    o.cure[P] = {method:V(`c_${P}_method`), exposure:N(`c_${P}_exp`), unit:V(`c_${P}_unit`),
+                 device:V(`c_${P}_dev`), data:{}};
+    PTS.forEach(p => o.cure[P].data[p] = Array.from({length:REPS},(_,i)=>N(`cu_${P}_${p}_${i+1}`)));
+  });
+
+  o.precision.device = V('p_dev'); o.precision.sw = V('p_sw'); o.precision.ref = V('p_ref');
+  PREC_TYPES.forEach(t => {
+    o.precision[t.key] = {labels:t.cols.map((_,j)=>V(`hd_${t.key}_${j}`)),
+      rows:Array.from({length:NMODEL},(_,i)=>({model:i+1, printer:V(`pr_${t.key}_${i+1}_prn`),
+        v:t.cols.map((_,j)=>N(`pr_${t.key}_${i+1}_${j}`)), memo:V(`pr_${t.key}_${i+1}_memo`)}))};
+  });
+  o.precision.spec = {iHi:N('sp_i_hi'), iSd:N('sp_i_sd'), vHi:N('sp_v_hi'), vSd:N('sp_v_sd')};
+  o.final = {verdict:V('f_verdict'), issue:V('f_issue'), action:V('f_action'),
+             sign1:V('f_sign1'), sign2:V('f_sign2'), scope:V('f_scope')};
+
+  const st = {tempAve:S.tempAve, tempSd:S.tempSd, rhAve:S.rhAve, rhSd:S.rhSd, photoCount:photos.length};
+  PRN.forEach(P => {
+    const L = S.light[P] || {}, C = S.cure[P] || {};
+    st['light'+P] = {unit:V(`l_${P}_unit`), ave:L.ave, sd:L.sd, cv:L.cv, min:L.min, max:L.max, uni:L.uni, n:L.n};
+    st['cure'+P]  = {unit:V(`c_${P}_unit`), ave:C.ave, sd:C.sd, cv:C.cv, ptSdMax:C.ptSdMax, ptSdMaxAt:C.ptSdMaxAt, n:C.n};
+  });
+  st.lightAB = S.lightAB || {}; st.cureAB = S.cureAB || {};
+  PREC_TYPES.forEach(t => { const s = S.prec[t.key] || {};
+    st[t.key] = {ave:s['ave_0'], sd:s['sd_0'], aveA:s['aveA_0'], aveB:s['aveB_0']}; });
+  o.stats = st;
+  return o;
+}
+
+/* ═════ HTML 저장 / 복원 ═════ */
+function fileBase(o){
+  return 'QC_' + (o.meta.date || 'undated') + (o.meta.docno ? '_' + o.meta.docno : '');
+}
+function dl(name, text, mime){
+  const b = new Blob([mime === 'text/html' ? text : '\uFEFF'+text], {type:(mime||'text/csv')+';charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+/* 데이터 태그 마커는 문자열 조각을 이어 붙여 만듭니다.
+   이 소스 어디에도 데이터 태그의 여는 문자열이 통째로 존재해서는 안 됩니다.
+   존재하면 저장 시 정리용 정규식이 자기 자신(=코드)을 매치해 저장 파일의 스크립트가 손상됩니다.
+   (jsdom 라운드트립 테스트에서 실제로 재현된 결함이므로 이 분할을 유지하십시오.) */
+const D_ID    = 'qcData';
+const DATA_OPEN  = '<' + 'script id="' + D_ID + '" type="application/json">';
+const DATA_CLOSE = '<' + '/script>';
+const DATA_STRIP_RE = new RegExp('<' + 'script id="' + D_ID + '"[\\s\\S]*?<' + '/script>\\s*', 'g');
+const DATA_READ_RE  = new RegExp('<' + 'script id="' + D_ID +
+  '" type="application/json">([\\s\\S]*?)<' + '/script>');
+const BODY_END = '<' + '/body>';
+
+/* 입력값(프로퍼티)을 HTML 속성으로 고정 — 저장 파일을 JS 없이 열거나 인쇄해도 값이 남습니다 */
+function freezeValues(){
+  document.querySelectorAll('input').forEach(el => {
+    if(el.type === 'file') return;
+    if(el.type === 'checkbox' || el.type === 'radio'){
+      if(el.checked) el.setAttribute('checked',''); else el.removeAttribute('checked');
+    } else el.setAttribute('value', el.value);
+  });
+  document.querySelectorAll('textarea').forEach(el => { el.textContent = el.value; });
+  document.querySelectorAll('select').forEach(el => {
+    [...el.options].forEach(op => { if(op.selected) op.setAttribute('selected',''); else op.removeAttribute('selected'); });
+  });
+}
+
+function saveHTML(){
+  const o = collect();
+  if(!o.meta.date) return toast('측정 날짜를 먼저 입력하세요');
+  if(!o.meta.docno && !confirm('일지 번호가 비어 있습니다. 그대로 저장할까요?')) return;
+  /* 사진 썸네일 마크업은 비운 뒤 직렬화 — 이미지가 파일에 두 번 들어가는 것을 방지 */
+  G('photos').innerHTML = '';
+  freezeValues();          /* JS 없이 열어도 값이 보이도록 속성에 고정 */
+  let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  renderPhotos();
+  html = html.replace(DATA_STRIP_RE, '');
+  const tag = DATA_OPEN + JSON.stringify(o).replace(/</g,'\\u003c').replace(/>/g,'\\u003e') + DATA_CLOSE;
+  /* 마지막 닫는 body 태그 바로 앞에 삽입.
+     이 스크립트 본문에도 같은 문자열이 등장할 수 있으므로 첫 매치가 아니라 마지막 위치를 씁니다. */
+  const at = html.lastIndexOf(BODY_END);
+  html = at < 0 ? html + tag : html.slice(0, at) + tag + '\n' + html.slice(at);
+  const name = fileBase(o) + '.html';
+  dl(name, html, 'text/html');
+  toast(`저장: ${name} (${(html.length/1048576).toFixed(1)} MB) — 이 파일을 열면 그대로 복원됩니다`);
+}
+function apply(o){
+  if(!o || !o.meta) return toast('형식이 맞지 않는 파일입니다');
+  SECTIONS.forEach(s => { const e = G(s.sw);
+    if(e && o.sections && o.sections[s.key] !== undefined) e.checked = !!o.sections[s.key]; });
+  Object.entries(o.meta).forEach(([k,v]) => { if(G('m_'+k)) G('m_'+k).value = v ?? ''; });
+  PRN.forEach(P => Object.entries((o.printerMeta||{})[P] || {}).forEach(([k,v])=>{
+    const e = G(`m_${P}_${k}`); if(e) e.value = v ?? ''; }));
+
+  G('e_dev').value = o.env.device||''; G('e_cal').value = o.env.calDue||''; G('e_note').value = o.env.note||'';
+  (o.env.readings||[]).forEach((x,i)=>{ G('env_t'+(i+1)).value = x.time||'';
+    G('env_temp'+(i+1)).value = x.temp ?? ''; G('env_rh'+(i+1)).value = x.rh ?? ''; });
+  const es = o.env.spec||{}; G('sp_t_lo').value = es.tLo ?? ''; G('sp_t_hi').value = es.tHi ?? '';
+  G('sp_h_lo').value = es.hLo ?? ''; G('sp_h_hi').value = es.hHi ?? '';
+
+  const ls = (o.light||{}).spec||{}; G('sp_l_lo').value = ls.lo ?? ''; G('sp_l_hi').value = ls.hi ?? '';
+  G('sp_l_cv').value = ls.cvMax ?? ''; G('sp_l_un').value = ls.uniMin ?? ''; G('sp_l_ab').value = ls.abPct ?? '';
+  const cs = (o.cure||{}).spec||{}; G('sp_c_lo').value = cs.lo ?? ''; G('sp_c_hi').value = cs.hi ?? '';
+  G('sp_c_sd').value = cs.sdMax ?? ''; G('sp_c_cv').value = cs.cvMax ?? ''; G('sp_c_ab').value = cs.abPct ?? '';
+
+  PRN.forEach(P => {
+    const L = (o.light||{})[P];
+    if(L){ G(`l_${P}_dev`).value = L.device||''; if(L.unit) G(`l_${P}_unit`).value = L.unit;
+      G(`l_${P}_wl`).value = L.wl||''; G(`l_${P}_time`).value = L.time||'';
+      PTS.forEach(p => { const e = G(`li_${P}_${p}`); if(e) e.value = (L.grid||{})[p] ?? ''; }); }
+    const C = (o.cure||{})[P];
+    if(C){ G(`c_${P}_method`).value = C.method||''; G(`c_${P}_exp`).value = C.exposure ?? '';
+      if(C.unit) G(`c_${P}_unit`).value = C.unit; G(`c_${P}_dev`).value = C.device||'';
+      PTS.forEach(p => ((C.data||{})[p]||[]).forEach((v,i)=>{
+        const e = G(`cu_${P}_${p}_${i+1}`); if(e) e.value = v ?? ''; })); }
+  });
+
+  G('p_dev').value = o.precision.device||''; G('p_sw').value = o.precision.sw||''; G('p_ref').value = o.precision.ref||'';
+  PREC_TYPES.forEach(t => {
+    const d = o.precision[t.key]; if(!d) return;
+    (d.labels||[]).forEach((L,j)=>{ const e = G(`hd_${t.key}_${j}`); if(e) e.value = L; });
+    (d.rows||[]).forEach(row => {
+      const pe = G(`pr_${t.key}_${row.model}_prn`); if(pe) pe.value = row.printer||'';
+      (row.v||[]).forEach((v,j)=>{ const e = G(`pr_${t.key}_${row.model}_${j}`); if(e) e.value = v ?? ''; });
+      const m = G(`pr_${t.key}_${row.model}_memo`); if(m) m.value = row.memo||''; });
+  });
+  const ps = o.precision.spec||{}; G('sp_i_hi').value = ps.iHi ?? ''; G('sp_i_sd').value = ps.iSd ?? '';
+  G('sp_v_hi').value = ps.vHi ?? ''; G('sp_v_sd').value = ps.vSd ?? '';
+  const f = o.final||{};
+  G('f_verdict').value = f.verdict||''; G('f_issue').value = f.issue||''; G('f_action').value = f.action||'';
+  G('f_sign1').value = f.sign1||''; G('f_sign2').value = f.sign2||'';
+  photos = (o.photos||[]).filter(p=>p.dataUrl); renderPhotos(); recalc();
+}
+function loadFile(f){
+  const fr = new FileReader();
+  fr.onload = ev => {
+    const txt = ev.target.result;
+    try{
+      if(/\.json$/i.test(f.name)) { apply(JSON.parse(txt)); return toast('불러오기 완료 (JSON)'); }
+      const m = DATA_READ_RE.exec(txt);
+      if(!m) return toast('이 HTML 안에 저장된 입력값이 없습니다');
+      apply(JSON.parse(m[1].replace(/\\u003c/g,'<').replace(/\\u003e/g,'>')));
+      toast('불러오기 완료 — 이어서 입력 후 다시 저장하세요');
+    }catch(e){ toast('불러오기 실패: '+e.message); }
+  };
+  fr.readAsText(f);
+}
+
+/* ═════ CSV / TSV ═════ */
+const SUM_HDR = ['날짜','일지번호','작성자','검토자','조성코드','LotNo','슬라이서','실시범위',
+  '온도ave','온도sd','습도ave','습도sd']
+  .concat(PRN.flatMap(P => [`${P}_프린터`,`${P}_파장`,`${P}_FEPh`,`${P}_누적h`,
+    `${P}_광량단위`,`${P}_광량ave`,`${P}_광량sd`,`${P}_광량CV%`,`${P}_광량min`,`${P}_광량max`,`${P}_균일도%`,
+    `${P}_Cure단위`,`${P}_CureAve`,`${P}_CureSd`,`${P}_CureCV%`,`${P}_포인트내sd최대`]))
+  .concat(['광량Δ(A−B)','광량Δ%','광량최대격차','CureΔ(A−B)','CureΔ%','Cure최대격차',
+    '인레이①ave','인레이①sd','인레이①A','인레이①B','비니어①ave','비니어①sd','비니어①A','비니어①B',
+    '사진수','기준이탈','최종판정','특이사항','조치']);
+const SKIP = '미실시';
+function summaryRow(o){
+  const s = o.stats, sec = o.sections, r = v => (v === null || v === undefined) ? '' : v;
+  const row = [o.meta.date,o.meta.docno,o.meta.author,o.meta.review,o.meta.formula,o.meta.lot,
+    o.meta.slicer,o.final.scope];
+  row.push(...(sec.env ? [r(s.tempAve),r(s.tempSd),r(s.rhAve),r(s.rhSd)] : [SKIP,'','','']));
+  PRN.forEach(P => {
+    const pm = o.printerMeta[P] || {}, L = s['light'+P] || {}, C = s['cure'+P] || {};
+    row.push(pm.printer||'', pm.wl||'', pm.fep||'', pm.hours||'');
+    row.push(...(sec.light ? [L.unit||'',r(L.ave),r(L.sd),r(L.cv),r(L.min),r(L.max),r(L.uni)]
+                           : [SKIP,'','','','','','']));
+    row.push(...(sec.cure  ? [C.unit||'',r(C.ave),r(C.sd),r(C.cv),r(C.ptSdMax)] : [SKIP,'','','','']));
+  });
+  const la = s.lightAB||{}, ca = s.cureAB||{};
+  row.push(...(sec.light ? [r(la.dAve),r(la.dPct),r(la.dMaxPt)] : [SKIP,'','']));
+  row.push(...(sec.cure  ? [r(ca.dAve),r(ca.dPct),r(ca.dMaxPt)] : [SKIP,'','']));
+  ['inlay','veneer'].forEach(k => { const p = s[k]||{};
+    row.push(...(sec.prec ? [r(p.ave),r(p.sd),r(p.aveA),r(p.aveB)] : [SKIP,'','',''])); });
+  row.push(sec.photo ? s.photoCount : SKIP, (o.flags||[]).join('; '),
+    o.final.verdict, o.final.issue, o.final.action);
+  return row;
+}
+const RAW_HDR = ['날짜','일지번호','프린터','섹션','포인트/모델','반복/항목','값','단위','비고'];
+function rawRows(o){
+  const R = [], d = o.meta.date, no = o.meta.docno, sec = o.sections;
+  if(sec.env) o.env.readings.forEach((x,i)=>{
+    R.push([d,no,'공통','환경','-',(i+1)+'회 온도', x.temp ?? '', '°C', x.time||'']);
+    R.push([d,no,'공통','환경','-',(i+1)+'회 습도', x.rh ?? '', '%RH', x.time||'']);
+  });
+  PRN.forEach(P => {
+    if(sec.light) PTS.forEach(p => R.push([d,no,P,'광량',p,'1회',
+      o.light[P].grid[p] ?? '', o.light[P].unit, o.printerMeta[P].note||'']));
+    if(sec.cure)  PTS.forEach(p => o.cure[P].data[p].forEach((v,i)=>
+      R.push([d,no,P,'CureDepth',p,(i+1)+'회', v ?? '', o.cure[P].unit, ''])));
+  });
+  /* 정밀도: 값이 하나도 없는 모델 행은 내보내지 않습니다(피벗 노이즈 방지) */
+  if(sec.prec) PREC_TYPES.forEach(t => o.precision[t.key].rows.forEach(row => {
+    if(row.v.every(v => v === null) && !row.memo) return;
+    row.v.forEach((v,j)=>R.push([d,no,row.printer||'미지정','정밀도-'+t.label,'#'+row.model,
+      o.precision[t.key].labels[j], v ?? '', 'µm', row.memo||'']));
+  }));
+  if(sec.photo) o.photos.forEach((p,i)=>R.push([d,no,p.printer||'미지정','사진','#'+(i+1),
+    p.name||'', '', '', p.caption||'']));
+  return R;
+}
+const tsv = rows => rows.map(r=>r.map(c=>String(c ?? '').replace(/\t/g,' ').replace(/\n/g,' ')).join('\t')).join('\n');
+function copyTSV(kind){
+  const o = collect();
+  const txt = kind === 'summary' ? tsv([SUM_HDR, summaryRow(o)]) : tsv([RAW_HDR, ...rawRows(o)]);
+  navigator.clipboard.writeText(txt).then(()=>toast(`${kind === 'summary' ? '요약 1행' : 'Raw '+rawRows(o).length+'행'} 복사 완료`),
+    ()=>toast('클립보드 권한 없음 — CSV 내보내기를 사용하세요'));
+}
+const csvEsc = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+function downloadCSV(){
+  const o = collect(), base = fileBase(o);
+  dl(base+'_summary.csv', [SUM_HDR, summaryRow(o)].map(r=>r.map(csvEsc).join(',')).join('\n'));
+  dl(base+'_raw.csv',     [RAW_HDR, ...rawRows(o)].map(r=>r.map(csvEsc).join(',')).join('\n'));
+  toast('summary + raw CSV 저장 (나중에 시트로 취합할 때 사용)');
+}
+
+/* ═════ 임시저장 ═════ */
+function saveDraft(silent){
+  if(!LS.ok){ G('draftInfo').textContent = '자동 임시저장 불가(브라우저 저장 차단) — [HTML로 저장]을 사용하세요'; return; }
+  try{ const o = collect(); o.photos = [];
+    G('draftInfo').textContent = LS.set('qcDraft3', JSON.stringify(o))
+      ? '자동 임시저장 ' + new Date().toLocaleTimeString('ko-KR') + ' (사진 제외)'
+      : '임시저장 실패 (용량 초과 가능)';
+  }catch(e){ G('draftInfo').textContent = '임시저장 실패'; }
+  if(!silent) toast('임시저장');
+}
+function resetForm(){
+  if(!confirm('입력 내용을 모두 지웁니다. 저장한 HTML 파일은 영향받지 않습니다. 계속할까요?')) return;
+  LS.del('qcDraft3'); photos = [];
+  const u = location.href.split('#')[0]; location.replace(u);
+}
+
+/* ═════ 부팅 ═════ */
+buildPrinterMeta(); buildEnv(); buildLight(); buildCure(); PREC_TYPES.forEach(buildPrec);
+
+/* 저장된 데이터 블록은 이 스크립트보다 뒤(</body> 직전)에 삽입되므로,
+   스크립트 실행 시점에는 아직 DOM 에 없습니다. 문서 파싱이 끝난 뒤에 복원해야 합니다.
+   (이 지연이 없으면 동적 표 — 광량·cure·정밀도 — 값이 복원되지 않습니다.) */
+function boot(){
+  const emb = G(D_ID);
+  if(emb){
+    try{ apply(JSON.parse(emb.textContent.replace(/\\u003c/g,'<').replace(/\\u003e/g,'>')));
+      toast('저장된 일지를 불러왔습니다'); return; }catch(e){}
+  }
+  const dr = LS.get('qcDraft3');
+  if(dr){ try{ apply(JSON.parse(dr)); }catch(e){} }
+  if(!V('m_date')) G('m_date').value = new Date().toISOString().slice(0,10);
+  recalc();
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+
+document.addEventListener('input',  e => { if(e.target.type !== 'file') recalc(); });
+document.addEventListener('change', e => { if(e.target.type !== 'file') recalc(); });
+G('fileIn').addEventListener('change', e => addFiles(e.target.files));
+G('htmlIn').addEventListener('change', e => { const f = e.target.files[0]; if(f) loadFile(f); e.target.value = ''; });
+const dz = G('drop');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('on'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('on'); }));
+dz.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+window.addEventListener('beforeunload', () => saveDraft(true));
+</script>
+
+
+<script id="qcData" type="application/json">{"schema":"qc-daily-log/v0.3","printers":["A","B"],"sections":{"env":true,"light":true,"cure":true,"prec":false,"photo":false},"meta":{"date":"2026-07-30","docno":"QC-2026-0730","author":"이윤희","review":"이윤희","formula":"ver11","lot":"Lot-260722","slicer":"layer 50µm","note":"동일 lot으로 프린터 A/B 비교 평가"},"printerMeta":{"A":{"printer":"QC 후 공급된 프린터 A","wl":"405","fep":".0","hours":"0","resin":"신규투입","lot":"","note":""},"B":{"printer":"QC 후 공급된 프린터 B","wl":"405","fep":"0","hours":"0","resin":"신규투입","lot":"","note":"신규 설치"}},"env":{"readings":[{"time":"","temp":26.4,"rh":60},{"time":"","temp":null,"rh":null},{"time":"","temp":null,"rh":null}],"spec":{"tLo":null,"tHi":null,"hLo":null,"hHi":null},"device":"JB-913","calDue":"","note":"일과 시간 AC 가동"},"light":{"spec":{"lo":8,"hi":10,"cvMax":null,"uniMin":null,"abPct":5},"A":{"device":"E 조도계","unit":"mW/cm²","wl":"405","time":"","grid":{"A1":9.285,"A2":8.58,"A3":8.361,"B1":8.554,"B2":8,"B3":9.147,"C1":8.78,"C2":8.9,"C3":8.73}},"B":{"device":"E 조도계 ","unit":"mW/cm²","wl":"","time":"","grid":{"A1":8.8,"A2":8.77,"A3":8.48,"B1":8.72,"B2":8.2,"B3":8.6,"C1":9.13,"C2":8.99,"C3":8.92}}},"cure":{"spec":{"lo":40,"hi":70,"sdMax":null,"cvMax":null,"abPct":10},"A":{"method":"1 layer 출력 후 버니어로 측정","exposure":1.2,"unit":"µm","device":"버니어캘리퍼스","data":{"A1":[60,50,70],"A2":[70,60,70],"A3":[60,60,50],"B1":[null,null,null],"B2":[null,null,null],"B3":[null,null,null],"C1":[null,null,null],"C2":[null,null,null],"C3":[null,null,null]}},"B":{"method":"1 layer 출력 후 버니어로 측정","exposure":1.2,"unit":"µm","device":"버니어캘리퍼스","data":{"A1":[60,50,60],"A2":[70,50,60],"A3":[60,60,60],"B1":[null,null,null],"B2":[null,null,null],"B3":[null,null,null],"C1":[null,null,null],"C2":[null,null,null],"C3":[null,null,null]}}},"precision":{"device":"버니어캘리퍼스","sw":"","ref":"","inlay":{"labels":["RMS 오차 (µm)","최대 편차 (µm)","마진 갭 (µm)"],"rows":[{"model":1,"printer":"A","v":[null,null,null],"memo":""},{"model":2,"printer":"","v":[null,null,null],"memo":""},{"model":3,"printer":"","v":[null,null,null],"memo":""},{"model":4,"printer":"","v":[null,null,null],"memo":""},{"model":5,"printer":"","v":[null,null,null],"memo":""},{"model":6,"printer":"","v":[null,null,null],"memo":""},{"model":7,"printer":"","v":[null,null,null],"memo":""},{"model":8,"printer":"","v":[null,null,null],"memo":""},{"model":9,"printer":"","v":[null,null,null],"memo":""},{"model":10,"printer":"","v":[null,null,null],"memo":""}]},"veneer":{"labels":["RMS 오차 (µm)","최대 편차 (µm)","두께 편차 (µm)"],"rows":[{"model":1,"printer":"","v":[null,null,null],"memo":""},{"model":2,"printer":"","v":[null,null,null],"memo":""},{"model":3,"printer":"","v":[null,null,null],"memo":""},{"model":4,"printer":"","v":[null,null,null],"memo":""},{"model":5,"printer":"","v":[null,null,null],"memo":""},{"model":6,"printer":"","v":[null,null,null],"memo":""},{"model":7,"printer":"","v":[null,null,null],"memo":""},{"model":8,"printer":"","v":[null,null,null],"memo":""},{"model":9,"printer":"","v":[null,null,null],"memo":""},{"model":10,"printer":"","v":[null,null,null],"memo":""}]},"spec":{"iHi":null,"iSd":null,"vHi":null,"vSd":null}},"photos":[],"final":{"verdict":"","issue":"프린터 B의 광량 이상 (세팅 값: 11.0 mW/cm^2)으로 광량 QC 재실시. 현재는 프린터 A와 프린터 B 사이에서 유사한 수준의 광량이 확인됨","action":"","sign1":"","sign2":"","scope":"환경 · 광량 · CureDepth"},"stats":{"tempAve":26.4,"tempSd":null,"rhAve":60,"rhSd":null,"photoCount":0,"lightA":{"unit":"mW/cm²","ave":8.70411111111111,"sd":0.3920808094144766,"cv":4.504547384671725,"min":8,"max":9.285,"uni":86.16047388260635,"n":9},"cureA":{"unit":"µm","ave":61.111111111111114,"sd":7.817359599705716,"cv":12.792042981336627,"ptSdMax":10,"ptSdMaxAt":"A1","n":9},"lightB":{"unit":"mW/cm²","ave":8.734444444444444,"sd":0.28071832462056684,"cv":3.213923065239921,"min":8.2,"max":9.13,"uni":89.81380065717414,"n":9},"cureB":{"unit":"µm","ave":58.888888888888886,"sd":6.009252125773315,"cv":10.204390402256573,"ptSdMax":10,"ptSdMaxAt":"A2","n":9},"lightAB":{"dAve":-0.0303333333333331,"dPct":0.347888140582487,"dMaxPt":0.5470000000000006,"dMaxPtAt":"B3"},"cureAB":{"dAve":2.2222222222222285,"dPct":3.703703703703714,"dMaxPt":6.666666666666671,"dMaxPtAt":"A2"},"inlay":{"ave":null,"sd":null,"aveA":null,"aveB":null},"veneer":{"ave":null,"sd":null,"aveA":null,"aveB":null}},"flags":[]}</script>
+</body></html>
